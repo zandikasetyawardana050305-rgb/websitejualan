@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Admin · D&N Kitchen{% endblock %}
+{% block content %}
+<main class="wrap">
+{% if login %}
+  <form method="post" class="login">
+    <h2>Masuk Admin</h2>
+    <input type="password" name="password" placeholder="Password" required autofocus>
+    {% if error %}<p class="err">{{ error }}</p>{% endif %}
+    <button class="btn block">Masuk</button>
+  </form>
+{% else %}
+  <div class="row"><h2 class="title">Pesanan Pelanggan</h2><a href="{{ url_for('logout') }}">Keluar</a></div>
+  <div class="chips">
+    <a class="{{ '' if f else 'on' }}" href="{{ url_for('admin') }}">Semua</a>
+    {% for s in statuses %}<a class="{{ 'on' if f==s }}" href="{{ url_for('admin', status=s) }}">{{ s }} ({{ stats[s] }})</a>{% endfor %}
+  </div>
+  {% for o in orders %}
+  <article class="order">
+    <div class="row"><strong>#{{ o.id }} · {{ o.nama }}</strong><small>{{ o.dibuat }}</small></div>
+    <p><a href="tel:{{ o.telepon }}">{{ o.telepon }}</a> — {{ o.alamat }}</p>
+    <ul>{% for i in o["items"] %}<li>{{ i.qty }}× {{ i.nama }} <span>{{ (i.harga*i.qty)|rp }}</span></li>{% endfor %}</ul>
+    {% if o.catatan %}<p class="muted">Catatan: {{ o.catatan }}</p>{% endif %}
+    <div class="row"><strong>{{ o.total|rp }}</strong>
+      <form method="post" action="{{ url_for('ubah_status', oid=o.id) }}" class="st">
+        <select name="status" onchange="this.form.submit()">
+          {% for s in statuses %}<option {{ 'selected' if s==o.status }}>{{ s }}</option>{% endfor %}
+        </select></form></div>
+  </article>
+  {% else %}<p class="muted">Belum ada pesanan.</p>{% endfor %}
+{% endif %}
+</main>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Menu · D&N Kitchen{% endblock %}
+{% block content %}
+<main class="wrap">
+  <h2 class="title">Menu Kami</h2>
+  <div class="layout">
+    <section class="grid">
+      {% for m in items %}
+      <article class="card">
+        {% if m.gambar %}<img class="foto" src="{{ url_for('static', filename='img/' + m.gambar) }}" alt="{{ m.nama }}" loading="lazy">
+        {% else %}<div class="emoji">{{ m.emoji }}</div>{% endif %}
+        <h3>{{ m.nama }}</h3>
+        <p>{{ m.deskripsi }}</p>
+        <div class="row"><strong>{{ m.harga|rp }}</strong>
+          <button class="btn sm" data-id="{{ m.id }}" data-nama="{{ m.nama }}" data-harga="{{ m.harga }}">Tambah</button></div>
+      </article>
+      {% endfor %}
+    </section>
+
+    <aside class="cart" id="cart">
+      <h3>Pesanan Kamu</h3>
+      <ul id="list"><li class="muted">Belum ada item.</li></ul>
+      <div class="row total"><span>Total</span><strong id="total">Rp 0</strong></div>
+      <form id="form">
+        <input name="nama" placeholder="Nama" required>
+        <input name="telepon" type="tel" placeholder="No. WhatsApp / telepon" required>
+        <textarea name="alamat" rows="2" placeholder="Alamat pengantaran" required></textarea>
+        <input name="catatan" placeholder="Catatan (opsional)">
+        <button class="btn block" type="submit">Pesan Sekarang</button>
+        <p id="msg" role="status"></p>
+      </form>
+    </aside>
+  </div>
+</main>
+
+<script>
+const cart = {}, fmt = n => "Rp " + n.toLocaleString("id-ID");
+const list = document.getElementById("list"), msg = document.getElementById("msg");
+
+function render() {
+  const ids = Object.keys(cart); let total = 0;
+  list.innerHTML = ids.length ? "" : '<li class="muted">Belum ada item.</li>';
+  ids.forEach(id => {
+    const c = cart[id]; total += c.harga * c.qty;
+    const li = document.createElement("li");
+    li.innerHTML = `<span>${c.nama}<br><small>${fmt(c.harga)}</small></span>
+      <span class="qty"><button type="button" data-d="-1" data-id="${id}">−</button><b>${c.qty}</b><button type="button" data-d="1" data-id="${id}">+</button></span>`;
+    list.appendChild(li);
+  });
+  document.getElementById("total").textContent = fmt(total);
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.nama) {
+    const c = cart[b.dataset.id] ||= {nama: b.dataset.nama, harga: +b.dataset.harga, qty: 0};
+    c.qty++; render();
+  } else if (b.dataset.d) {
+    const c = cart[b.dataset.id]; c.qty += +b.dataset.d;
+    if (c.qty <= 0) delete cart[b.dataset.id]; render();
+  }
+});
+document.getElementById("form").addEventListener("submit", async e => {
+  e.preventDefault(); msg.className = "";
+  const f = Object.fromEntries(new FormData(e.target));
+  f.items = Object.entries(cart).map(([id, c]) => ({id: +id, qty: c.qty}));
+  const r = await fetch("/api/pesan", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(f)});
+  const d = await r.json();
+  if (r.ok) {
+    msg.textContent = `Pesanan #${d.id} diterima! Total ${fmt(d.total)}. Kami segera menghubungi kamu.`;
+    msg.className = "ok"; e.target.reset();
+    for (const k in cart) delete cart[k]; render();
+  } else { msg.textContent = d.error; msg.className = "err"; }
+});
+</script>
+{% endblock %}

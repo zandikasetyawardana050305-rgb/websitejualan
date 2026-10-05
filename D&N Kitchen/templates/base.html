@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}D&N Kitchen{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="nav">
+  <a class="brand" href="{{ url_for('index') }}">🍜 D&amp;N Kitchen</a>
+  <nav>
+    <a href="{{ url_for('index') }}">Home</a>
+    <a href="{{ url_for('menu') }}">Menu</a>
+  </nav>
+</header>
+{% block content %}{% endblock %}
+<footer class="foot">© D&amp;N Kitchen · <a href="{{ url_for('admin') }}">Admin</a></footer>
+</body>
+</html>
